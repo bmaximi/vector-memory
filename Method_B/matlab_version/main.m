@@ -3,10 +3,10 @@ clear, close all
 outfile = fopen('diagnostic.out','w');
 
 %%%%%% 1. Setting up the data
-data_xx = importdata('vxvxc.txt');
-data_xy = importdata('vxvyc.txt');
-data_yx = importdata('vyvxc.txt');
-data_yy = importdata('vyvyc.txt');
+data_xx = importdata('Data/vxvxc.txt');
+data_xy = importdata('Data/vxvyc.txt');
+data_yx = importdata('Data/vyvxc.txt');
+data_yy = importdata('Data/vyvyc.txt');
 
 phi(1,1,:) = data_xx(:,2); phi(1,2,:) = data_xy(:,2);
 phi(2,1,:) = data_yx(:,2); phi(2,2,:) = data_yy(:,2);
