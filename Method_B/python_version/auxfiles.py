@@ -24,6 +24,7 @@ def markov_app(data,tt,dim,n2,twidth,r,g,tol):
     G (m x d real array): direction of the Brownian motion
     lambdaj (m x 1 complex array): exponents of the computed Prony series
     res (d x d x m complex array): coefficients of the computed Prony series
+    phi (d x d x N real array): transformed data such that data(t=0) = I
 
     """
 
@@ -54,7 +55,7 @@ def markov_app(data,tt,dim,n2,twidth,r,g,tol):
     m = A.shape[0]
     Sigma, G = solve_Lure(A,dim)
 
-    return A, Sigma, G, lambdaj, res
+    return A, Sigma, G, lambdaj, res, phi
 
 def blockaaa(Z,F,d,tol):
     """ Computes a rational approximation to a given data set using a matrix-valued version of the
@@ -83,12 +84,12 @@ def blockaaa(Z,F,d,tol):
     m = 2
 
     L = constr_Loewner(J,F,f,Z,z,d,m)
-    U,S,Vh = npla.svd(L, full_matrices=False, compute_uv=True)
-    V = np.conjugate(Vh)
+    Vh = npla.svd(L, full_matrices=False, compute_uv=True)[-1]
+    V = np.conjugate(Vh.T)
     w1 = V[:,-1]
     w = symm_weights(w1)
 
-    R = compute_app(w,F,f,Z,z,J,d)
+    R = compute_app(w,F,f,Z,z,J)
     errvec = npla.norm(F-R,'fro',axis=(0,1))
     ind = np.argmax(errvec)
     err = np.inf
@@ -103,12 +104,12 @@ def blockaaa(Z,F,d,tol):
         J = np.delete(J,[np.where(J==ind),np.where(J==cc)])
         # Solve optimization problem for the weights
         L = constr_Loewner(J,F,f,Z,z,d,m)
-        U,S,Vh = npla.svd(L, full_matrices=False, compute_uv=True)
+        Vh = npla.svd(L, full_matrices=False, compute_uv=True)[-1]
         V = np.conjugate(Vh.T)
         w1 = V[:,-1]
         w = symm_weights(w1)
 
-        R = compute_app(w,F,f,Z,z,J,d)
+        R = compute_app(w,F,f,Z,z,J)
         errvec = npla.norm(F-R,'fro',axis=(0,1))
         ind = np.argmax(errvec)
         err = np.max(errvec)
@@ -175,18 +176,16 @@ def symm_weights(w1):
     for i in range(2,n,2):
         w2[i] = w1[i+1]
         w2[i+1] = w1[i]
-    """
-    if npla.norm(w1 - w2) > 1e-12:
-        w = w1 + w2.conjugate
+
+    if npla.norm(w1 + w2) > 1e-12:
+        w = w1 + np.conjugate(w2)
         w = w/npla.norm(w)
     else:
         w = 1j*w1/npla.norm(w1)
-    """
-    w = w1 + np.conjugate(w2)
-    w /= npla.norm(w)
+    
     return w
 
-def compute_app(w,F,f,Z,z,J,d):
+def compute_app(w,F,f,Z,z,J):
     """ Evaluates a rational function in barycentric form for a given set of grid points.
 
     Parameters:
@@ -194,8 +193,7 @@ def compute_app(w,F,f,Z,z,J,d):
     f (d x d x m complex array): function values at z
     F (d x d x g complex array): data points at Z
     Z (g x 1 complex array): grid points of the equiangular grid
-    J (g-m x 1 int array): index vector
-    d (int): dimension of the underlying system
+    J (g-m x 1 int array): index vecto
 
     Returns:
     R (d x d x g): rational approximation evaluated at the given grid points
@@ -203,8 +201,6 @@ def compute_app(w,F,f,Z,z,J,d):
     """
     R = np.copy(F)
     for k in range(0,J.size):
-        N = np.zeros((d,d))
-        D = 0
         cauchyw = np.divide(w,Z[J[k]]-z)
         N = np.inner(f,cauchyw)
         D = sum(cauchyw)
@@ -249,14 +245,23 @@ def calc_exponents(pol,tau):
                                    in case of negative real poles, we have m > n.
     
     """
-
+    pospol = pol[np.logical_and(np.real(pol)>0,np.abs(np.imag(pol))<1e-8)]
+    negpol = pol[np.logical_and(np.real(pol)<0,np.abs(np.imag(pol))<1e-8)]
+    ccpol = np.delete(pol,np.logical_or(np.logical_and(np.real(pol)>0,np.abs(np.imag(pol))<1e-8),
+                                        np.logical_and(np.real(pol)<0,np.abs(np.imag(pol))<1e-8)))
+    
+    pol = np.concatenate((np.log(pospol),np.sort(np.log(ccpol))))
+    for x in negpol:
+        pol = np.append(pol,np.log(x)+1j*np.pi)
+        pol = np.append(pol,np.log(x)-1j*np.pi)
+    """
     pol = np.sort_complex(pol)
-    negpol = pol[np.logical_and(np.real(pol)<0,np.abs(np.imag(pol))<1e-12)]
+    negpol = pol[np.logical_and(np.real(pol)<0,np.abs(np.imag(pol))<1e-8)]
     pol = np.delete(pol,np.where(np.logical_and(np.real(pol)<0,np.abs(np.imag(pol))<1e-12)))
     for x in negpol:
         pol = np.append(pol,x+1j*np.pi)
-        pol = np.append(pol,x-1j*np.pi)
-    return np.log(pol)/tau
+        pol = np.append(pol,x-1j*np.pi)"""
+    return pol/tau
 
 def solve_constr_lsq(lambdaj,y,t,dim,m):
     """ Solves the optimization problem for the coefficients Gammaj
@@ -322,7 +327,7 @@ def constr_lsq(A,b,B,d):
     """
 
     # Check if lsq problem has unique solution
-    U,S,V = npla.svd(np.concatenate((A,B),axis=0).T)
+    S = npla.svd(np.concatenate((A,B),axis=0).T)[1]
     if S[-1] < 1e-14:
         Warning("Constrained LSQ has no unique minimizer")
 
@@ -404,7 +409,7 @@ def basis_trafo(U,V):
 
     d = V.shape[1]
     S = U.T@V
-    Q,s,v = npla.svd(V)
+    Q = npla.svd(V)[0]
     X = np.concatenate((npla.inv(scpla.sqrtm(S))@U.T,np.conjugate(Q[:,d:].T)),axis=0)
     return X
 

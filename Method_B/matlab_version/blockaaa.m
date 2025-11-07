@@ -86,13 +86,12 @@ function W = symm_weights(W1)
         W2(i+1) = W1(i);
     end
     
-    W = (W1 + conj(W2))/norm(W1 + conj(W2));
-%     if norm(W1 - W2) > 1e-12
-%         W = W1 + conj(W2);
-%         W = W / norm(W);
-%     else
-%         W = 1i*W1/norm(W1);
-%     end
+    if norm(W1 + W2) > 1e-12
+        W = W1 + conj(W2);
+        W = W / norm(W);
+    else
+        W = 1i*W1/norm(W1);
+    end
 end
 
 function R = compute_app(w,F,f,Z,z)

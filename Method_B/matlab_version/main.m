@@ -72,23 +72,19 @@ for i=1:length(tt)
     app(:,:,i) = eye(dim,m)*expm(tt(i)*A)*eye(m,dim);
 end
 
-% error interpolation points
-tmp = app(:,:,1:twidth:twidth*n2) - phi(:,:,1:twidth:twidth*n2);
-for i=1:n2
-    errvec(i) = norm(tmp(:,:,i),'fro');
-end
-err = max(errvec);
-
-% error interpolation interval
-tmp = app(:,:,1:twidth*n2) - phi(:,:,1:twidth*n2);
-for i=1:n2
-    errvec(i) = norm(tmp(:,:,i),'fro');
-end
-err2 = max(errvec);
-
-% error total time interval
 tmp = app - phi;
 for i=1:length(tt)
     errvec(i) = norm(tmp(:,:,i),'fro');
 end
-err3 = max(errvec);
+
+err1 = max(errvec(1:twidth:twidth*n2)); % error interpolation points
+err2 = max(errvec(1:twidth*n2)); % error interpolation interval
+err3 = max(errvec); % error total time interval
+
+
+
+
+
+
+
+
