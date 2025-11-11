@@ -16,6 +16,7 @@ function lambda = calc_exponents(pol,tau)
     negPol = [real(log(pol(neg_ind))) + 1i*pi; real(log(pol(neg_ind)))-1i*pi;];
     [sorted_negPol, ~] = sort(negPol);
     
+    % order: positive -> complex conjugate -> duplicated negative poles
     logpol = [log(pol(pos_ind)); ccPol; sorted_negPol];
     lambda = logpol/tau;
 end

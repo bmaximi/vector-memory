@@ -11,7 +11,6 @@ function poles = blockaaa(Z,F,tol)
     Z = Z(:);
     M = length(Z);
     J = 1:M;
-    d = size(F,1);
 
     % select the real data points for first approximation
     z = [Z(1); Z(M/2+1)];
