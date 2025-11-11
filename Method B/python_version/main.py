@@ -41,7 +41,7 @@ if __name__ == '__main__':
     print('Error interpolation points:', f"{err1:.3f}")
     print('Error interpolation interval', f"{err2:.3f}")
     print('Error all data points:', f"{err3:.3f}")
-
+    print('Number of aux. variables:',A.shape[0]-dim)
 
 
 
