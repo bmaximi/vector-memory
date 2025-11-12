@@ -5,7 +5,7 @@ import numpy.linalg as npla
 
 def markov_app(data,tt,dim,n2,twidth,r,g,tol):
     """ Computes a Markovian approximation to a given ACF by first computing a Prony series
-        by performing a rational approximation and a semidefinite optimization, followed by
+        by performing a rational approximation and a constrained least-squares optimization, followed by
         a construction of the system matrix and computation of the Covariance matrix and the
         direction of the Brownian motion.
 
