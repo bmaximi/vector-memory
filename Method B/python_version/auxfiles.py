@@ -450,10 +450,12 @@ def solve_Lure(A,d):
 
     # check if reduced system is solvable
     if np.min(npla.eigvals(R1)) < 0:
-        return
-    
+        print('Approximation is not positive real!\n D of reduced system is not positive definite.')
+        return np.zeros((N+d,N+d)), np.zeros((N+d,d))
+
     if A1.shape[0] > 0 and np.max(np.real(npla.eigvals(A1))) >= 0:
-        return
+        print('Approximation is not positive real!\n A0 of reduced system is not stable.')
+        return np.zeros((N+d,N+d)), np.zeros((N+d,d))
     
     # Solve reduced regular Lur'e system
     P = A1 - C1@npla.inv(R1)@B1.T
@@ -462,11 +464,13 @@ def solve_Lure(A,d):
     Sigma1 = scpla.solve_continuous_are(P.T,B1,Q,-R1,e=None,s=None)
     # check error
     if np.allclose(P@Sigma1 + Sigma1@P.T + Sigma1@B1@npla.inv(R1)@B1.T@Sigma1,-Q,rtol=1e-6) == False:
-        return
+        print('Riccati equation of reduced system not satisfied!')
+        return np.zeros((N+d,N+d)), np.zeros((N+d,d))
     
     # check symmetry
     if Sigma1.shape[0] > 0 and np.allclose(Sigma1,Sigma1.T,atol=1e-5)==False:
-        return
+        print('Covariance matrix Sigma0 not symmetric!')
+        return np.zeros((N+d,N+d)), np.zeros((N+d,d))
     
     # transform reduced system back to full system
     K1 = npla.cholesky(R1)
